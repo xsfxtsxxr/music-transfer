@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head><meta charset="UTF-8"><title>Worker 浏览器通道自检</title></head>
+<body>
+<pre id="out">RUNNING</pre>
+<script>
+  window.__diag = [];
+  window.addEventListener('error', (e) => { window.__diag.push('ERROR: ' + (e.message || e.filename)); document.getElementById('out').textContent = 'RESULT: FAIL\n' + window.__diag.join('\n'); });
+  window.addEventListener('unhandledrejection', (e) => { window.__diag.push('REJECT: ' + e.reason); document.getElementById('out').textContent = 'RESULT: FAIL\n' + window.__diag.join('\n'); });
+</script>
+<script type="module">
+import { hexToBytes, utf8, encodeBase64, concat, pkcs7Pad, writeU32le } from '../src/utils.js';
+import { aesEcbEncrypt } from '../src/aes.js';
+import { NCM_CORE_KEY, NCM_META_KEY, buildKeyBox } from '../src/ncm.js';
+import { isQmcExtension } from '../src/qmc.js';
+
+const out = document.getElementById('out');
+const log = [];
+const ok = (cond, msg) => { log.push(`${cond ? 'PASS' : 'FAIL'}  ${msg}`); if (!cond) throw new Error(msg); };
+const u32 = (v) => { const b = new Uint8Array(4); writeU32le(b, 0, v); return b; };
+const rand = (n) => { const a = new Uint8Array(n); for (let i = 0; i < n; i++) a[i] = (i * 37 + 11) & 255; return a; };
+
+function makeNcm() {
+  const audio = rand(4096); audio.set(utf8('fLaC'), 0);
+  const key = hexToBytes('00112233445566778899aabbccddeeff');
+  const keyRaw = Uint8Array.from(aesEcbEncrypt(pkcs7Pad(concat(utf8('neteasecloudmusic'), key)), NCM_CORE_KEY), (b) => b ^ 0x64);
+  const metaStr = 'music:' + JSON.stringify({ musicName: '浏览器测试', artist: [['演唱者', 1]], album: '专辑', format: 'flac' });
+  const metaEnc = aesEcbEncrypt(pkcs7Pad(utf8(metaStr)), NCM_META_KEY);
+  const metaBlock = Uint8Array.from(concat(utf8("163 key(Don't modify):"), utf8(encodeBase64(metaEnc))), (b) => b ^ 0x63);
+  const box = buildKeyBox(key);
+  const cover = Uint8Array.from([0xff, 0xd8, 0xff, 0xe0, ...rand(60)]);
+  const encAudio = Uint8Array.from(audio, (b, i) => b ^ box[i & 0xff]);
+  return {
+    bytes: concat(utf8('CTENFDAM'), new Uint8Array(2), u32(keyRaw.length), keyRaw, u32(metaBlock.length), metaBlock,
+      new Uint8Array(4), new Uint8Array(5), u32(cover.length), cover, encAudio),
+    audio,
+  };
+}
+
+function runTask(worker, id, name, buffer) {
+  return new Promise((resolve) => {
+    const onMsg = (e) => {
+      if (e.data.id !== id || e.data.type === 'PROGRESS') return;
+      worker.removeEventListener('message', onMsg);
+      resolve(e.data);
+    };
+    worker.addEventListener('message', onMsg);
+    worker.postMessage({ id, type: 'DECRYPT', payload: { buffer, name } }, [buffer]);
+  });
+}
+
+(async () => {
+  try {
+    out.textContent = 'STEP: module loaded';
+    const worker = new Worker(new URL('../src/worker.js', import.meta.url), { type: 'module' });
+    worker.onerror = (e) => { out.textContent = 'RESULT: FAIL\nWORKER ERROR: ' + e.message + '\n' + log.join('\n'); };
+    const sample = makeNcm();
+    out.textContent = 'STEP: sample built, size=' + sample.bytes.length;
+
+    const r1 = await runTask(worker, 1, 'demo.ncm', sample.bytes.buffer);
+    ok(r1.type === 'DONE', `NCM 解密返回 DONE（实际 ${r1.type}: ${r1.message || ''}）`);
+    const dec = new Uint8Array(r1.result.audioBuffer);
+    ok(dec.length === sample.audio.length, '音频长度一致');
+    ok(dec.every((b, i) => b === sample.audio[i]), '音频字节逐字节一致');
+    ok(r1.result.ext === '.flac', `输出扩展名 ${r1.result.ext}`);
+    ok(r1.result.suggestedName === '演唱者 - 浏览器测试.flac', `输出文件名 ${r1.result.suggestedName}`);
+    ok(r1.result.meta.cover && r1.result.meta.cover.coverBuffer.byteLength === 64, '封面通过 transfer 回传');
+    ok(r1.result.meta.title === '浏览器测试', '元数据回传');
+
+    const plain = rand(2048); plain.set(utf8('ID3'), 0);
+    const plainExpected = Uint8Array.from(plain); // transfer 会分离原 buffer，先留副本
+    const r2 = await runTask(worker, 2, '伪装.ncm', plain.buffer);
+    ok(r2.type === 'DONE' && r2.result.ext === '.mp3', '后缀伪装识别为 MP3');
+    ok(new Uint8Array(r2.result.audioBuffer).every((b, i) => b === plainExpected[i]), '伪装文件字节未改动');
+
+    const r3 = await runTask(worker, 3, 'new.kgg', rand(2048).buffer);
+    ok(r3.type === 'ERROR' && r3.code === 'NEEDS_SERVER_KEY', '新版变体明确拒绝');
+
+    ok(isQmcExtension('qmcflac') && isQmcExtension('mgg1'), 'QMC 后缀集合');
+    worker.terminate();
+    out.textContent = 'RESULT: PASS\n' + log.join('\n');
+  } catch (err) {
+    out.textContent = 'RESULT: FAIL\n' + log.join('\n') + '\nERROR: ' + err.message;
+  }
+})();
+</script>
+</body>
+</html>

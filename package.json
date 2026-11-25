@@ -1,0 +1,13 @@
+{
+  "name": "unlocktune",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "纯浏览器本地运行的加密音乐格式还原工具，零依赖、零上传",
+  "scripts": {
+    "dev": "node scripts/serve.mjs",
+    "start": "node scripts/serve.mjs",
+    "test": "node tests/run.mjs",
+    "test:browser": "node tests/ui-check.mjs"
+  }
+}

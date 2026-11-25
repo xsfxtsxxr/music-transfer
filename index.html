@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="在浏览器本地把 NCM / QMC / KGM / KWM 等加密音乐还原为标准 MP3、FLAC 等音频文件，文件不上传、不重编码。">
+<meta name="theme-color" content="#0a0d13">
+<title>音锁 UnlockTune · 本地音乐格式还原工具</title>
+<link rel="stylesheet" href="./styles.css">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='16' fill='%23ff5b52'/%3E%3Cpath d='M24 16v26a8 8 0 1 1-4-7V22l24-6v22a8 8 0 1 1-4-7V12z' fill='white'/%3E%3C/svg%3E">
+</head>
+<body>
+<div class="bg-orbs" aria-hidden="true"><span></span><span></span><span></span></div>
+
+<header class="topbar">
+  <a class="brand" href="#top" aria-label="音锁首页">
+    <span class="brand-mark">
+      <svg viewBox="0 0 32 32" fill="none" aria-hidden="true"><path d="M12 6v15.5a5 5 0 1 1-2.6-4.4V9.2L25 5v14.5a5 5 0 1 1-2.6-4.4V8.3L12 11" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </span>
+    <span class="brand-text"><b>音锁</b><small>UNLOCKTUNE</small></span>
+  </a>
+  <nav class="nav" aria-label="页面导航">
+    <a href="#workspace">转换工作台</a>
+    <a href="#formats">支持格式</a>
+    <a href="#guide">使用说明</a>
+  </nav>
+  <div class="privacy-pill"><span class="live-dot"></span> 100% 本地 · 零上传</div>
+</header>
+
+<main id="top">
+  <section class="hero">
+    <div class="hero-copy">
+      <div class="eyebrow"><span class="eyebrow-line"></span> 离线 · 无损 · 批量</div>
+      <h1>把下载的音乐，<br><span class="gradient-text">还原成它本来的样子</span></h1>
+      <p class="hero-desc">各平台下载目录里那些 <code>.ncm</code>、<code>.qmcflac</code>、<code>.kgm</code>、<code>.kwm</code> 文件，其实只是被加了一层锁。音锁在浏览器里把这层锁去掉，还原出原本的 MP3 / FLAC / M4A 音频流，一个字节都不重新编码。</p>
+      <div class="hero-actions">
+        <a class="btn primary" href="#workspace">开始转换 <span aria-hidden="true">↓</span></a>
+        <a class="btn ghost" href="#formats">查看支持格式</a>
+      </div>
+      <ul class="hero-points">
+        <li><span class="check">✓</span> 原始音质完整保留，不做有损转码</li>
+        <li><span class="check">✓</span> 文件不离开你的设备，断网也能用</li>
+        <li><span class="check">✓</span> 批量队列 + 并行处理 + ZIP 打包</li>
+      </ul>
+    </div>
+
+    <div class="hero-visual" aria-hidden="true">
+      <div class="visual-glow"></div>
+      <div class="vcard vcard-from">
+        <div class="vcard-head"><span class="vcard-dot red"></span><span class="vcard-dot amber"></span><span class="vcard-dot grey"></span></div>
+        <div class="vcard-body">
+          <div class="vfile"><span class="vfile-ico locked">◈</span><div><b>song_01.ncm</b><small>加密容器 · 38.4 MB</small></div></div>
+          <div class="vbar"><i style="width:78%"></i></div><div class="vbar"><i style="width:52%"></i></div><div class="vbar"><i style="width:91%"></i></div>
+          <div class="vtag">AES + 密钥盒</div>
+        </div>
+      </div>
+      <div class="vflow"><span></span><span></span><span></span><b>→</b></div>
+      <div class="vcard vcard-to">
+        <div class="vcard-head"><span class="vcard-dot red"></span><span class="vcard-dot amber"></span><span class="vcard-dot grey"></span></div>
+        <div class="vcard-body">
+          <div class="vfile"><span class="vfile-ico unlocked">♫</span><div><b>song_01.flac</b><small>FLAC 无损 · 38.4 MB</small></div></div>
+          <div class="wave"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+          <div class="vtag success">原始音频流 · 未重编码</div>
+        </div>
+      </div>
+      <div class="vfloating">文件始终留在本地</div>
+    </div>
+  </section>
+
+  <section class="workspace" id="workspace">
+    <div class="section-head">
+      <div><h2>转换工作台</h2><p>拖入文件即自动开始处理，全部在浏览器内完成</p></div>
+      <span class="section-badge">WEB WORKER 并行</span>
+    </div>
+
+    <div class="dropzone" id="dropzone" role="button" tabindex="0" aria-label="拖放或选择加密音乐文件">
+      <input type="file" id="fileInput" multiple hidden>
+      <div class="dz-icon">
+        <svg viewBox="0 0 48 48" fill="none" aria-hidden="true"><path d="M24 32V10m0 0-8 8m8-8 8 8" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/><path d="M8 30v6a4 4 0 0 0 4 4h24a4 4 0 0 0 4-4v-6" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/></svg>
+      </div>
+      <div class="dz-title">把加密音乐拖到这里</div>
+      <div class="dz-sub">或 <span>点击选择文件</span>，支持一次选择多个</div>
+      <div class="dz-chips"><span>.ncm</span><span>.qmc / .qmcflac</span><span>.mflac / .mgg</span><span>.kgm / .vpr</span><span>.kwm</span><span>更多</span></div>
+    </div>
+
+    <div class="toolbar">
+      <div class="stats" id="stats">
+        <div class="stat"><b id="statTotal">0</b><span>文件</span></div>
+        <div class="stat ok"><b id="statDone">0</b><span>已完成</span></div>
+        <div class="stat bad"><b id="statFailed">0</b><span>失败</span></div>
+        <div class="stat"><b id="statSize">0 B</b><span>输出体积</span></div>
+      </div>
+      <div class="tools">
+        <button class="btn primary sm" id="btnDownloadAll" disabled>打包下载全部 (ZIP)</button>
+        <button class="btn ghost sm" id="btnRetry" disabled>重试失败项</button>
+        <button class="btn ghost sm" id="btnClear" disabled>清空</button>
+      </div>
+    </div>
+
+    <div id="fileList" class="file-list"></div>
+    <div id="emptyState" class="empty-state">
+      <div class="empty-glyph">♫</div>
+      <b>还没有文件</b>
+      <p>把加密音频拖进上方区域，处理完成后可单首下载或打包带走。</p>
+    </div>
+  </section>
+
+  <section class="mask-panel" id="maskPanel">
+    <div class="mask-info">
+      <div class="mask-title"><span class="mask-key">◇</span> 酷狗 KGM / VPR 密钥表 <span class="badge optional">可选</span></div>
+      <p>酷狗老版加密除文件头自带的 17 字节私钥外，还需要一份公开的静态大掩码表（<code>kgm.maskfile</code>，解压后约 6.5 MB）。本站不内置、也不联网获取——把它拖到右侧即可启用。每 1 字节掩码对应 16 字节音频，表越大可处理的文件越大；支持 <code>.gz</code> 与原始 <code>.bin</code>。</p>
+      <div class="mask-status" id="maskStatus"><span class="status-dot muted"></span> 未加载 · KGM / VPR 暂不可用</div>
+    </div>
+    <label class="mask-drop" id="maskDrop">
+      <input type="file" id="maskInput" hidden accept=".gz,.bin,.maskfile,.xz,.dat">
+      <svg viewBox="0 0 32 32" fill="none" aria-hidden="true"><path d="M16 22V8m0 0-5 5m5-5 5 5M6 22v3a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-3" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      <b>选择或拖入密钥表</b>
+      <small>kgm.maskfile / .bin / .gz</small>
+    </label>
+  </section>
+
+  <section class="formats" id="formats">
+    <div class="section-head">
+      <div><h2>格式支持矩阵</h2><p>基于社区公开的逆向算法实现，能力边界如实标注</p></div>
+    </div>
+    <div class="legend">
+      <span><i class="lg ok"></i> 完全离线可解</span>
+      <span><i class="lg partial"></i> 部分可解</span>
+      <span><i class="lg mask"></i> 需导入本地密钥表</span>
+      <span><i class="lg no"></i> 需官方服务器密钥 · 不支持</span>
+    </div>
+    <div class="matrix-wrap"><table class="matrix" id="matrixTable">
+      <thead><tr><th>平台</th><th>常见后缀</th><th>处理方式</th><th>状态</th></tr></thead>
+      <tbody></tbody>
+    </table></div>
+    <div class="notice">
+      <div class="notice-ico">i</div>
+      <div>
+        <b>关于新版加密变体</b>
+        <p><code>.mflac0</code> / <code>.mgg1</code> / <code>.mggl</code> / <code>.kgg</code> / <code>.kgma</code> / <code>.kwma</code> 等新版格式的密钥由平台服务器或客户端账号数据库下发。纯离线工具拿不到这把钥匙，本站明确拒绝处理，也不会产出看似成功、实则损坏的文件。带本地 ekey 的 QMC 文件（含 QTag 尾部）依然可以正常解锁。</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="guide" id="guide">
+    <div class="section-head"><div><h2>使用说明与边界</h2><p>三分钟搞清楚这个工具在做什么</p></div></div>
+    <div class="guide-grid">
+      <article class="gcard">
+        <div class="gcard-num">01</div>
+        <h3>是「解密还原」，不是「转码」</h3>
+        <p>加密文件内部本来就是完整的 MP3 / FLAC / M4A 音频流，只是被逐字节异或打乱了。音锁把它还原成原始字节，因此<strong>零音质损失</strong>；输出后缀由文件魔数自动判定，而不是强行改成 .mp3。若确实需要改变编码格式，请用 ffmpeg 等工具做二次转码。</p>
+      </article>
+      <article class="gcard">
+        <div class="gcard-num">02</div>
+        <h3>文件不出本机</h3>
+        <p>页面加载后不发起任何音频上传请求；解密在 Web Worker 中本地完成，服务器只提供静态 HTML / JS。可用断网环境验证。NCM 内嵌的歌名、歌手、专辑与封面会被解析并展示，封面可单独下载或随 ZIP 打包；本站不改写 ID3 / FLAC 标签。</p>
+      </article>
+      <article class="gcard">
+        <div class="gcard-num">03</div>
+        <h3>仅用于你合法持有的音频</h3>
+        <p>请仅将本工具用于自己在各平台合法下载、供个人跨设备播放与备份的音频文件，并遵守相应服务条款与所在地法律法规。本站不提供绕过付费、账号体系或获取未授权内容的能力，也不请求任何平台服务器密钥。</p>
+      </article>
+    </div>
+    <div class="faq">
+      <details><summary>为什么有些文件显示「需要服务器密钥」？</summary><p>新版加密把密钥放在服务端，或绑定客户端登录态与本地数据库。这类密钥无法通过文件本身推导，任何声称能纯网页离线解开的站点都值得怀疑。本站选择明确报错，而不是生成无法播放的坏文件。</p></details>
+      <details><summary>解密后歌名、封面信息还在吗？</summary><p>NCM 容器里单独存了一份元数据和封面图，本站会解析出来展示，并可单独下载封面 / 随 ZIP 一起打包。音频流本身若原本带有 ID3 或 FLAC 标签，也会原样保留；本站不会主动改写标签。</p></details>
+      <details><summary>支持整个文件夹、超大 FLAC 或断点续传吗？</summary><p>可一次选择 / 拖入多个文件（浏览器不支持直接拖入文件夹，请先全选文件）。解密过程按 1 MB 分块并让出执行，几十 MB 的无损文件也能稳定处理。任务是纯本地的，刷新页面即清空，不保存任何文件到服务器。</p></details>
+      <details><summary>酷狗的大掩码表去哪里找？</summary><p>它是开源社区从客户端提取的公开静态常量，通常名为 <code>kgm.maskfile</code> 或 <code>kugou_key.xz</code>（xz 需先在本机解压为 .bin / .gz）。本站不托管、不自动下载该表，由你自行提供并全程留在本机内存中。</p></details>
+    </div>
+  </section>
+</main>
+
+<footer class="footer">
+  <div class="footer-brand">音锁 <span>UNLOCKTUNE</span></div>
+  <p>算法参考社区开源实现 · MIT 精神 · 纯前端离线工具</p>
+  <p class="footer-fine">仅用于个人合法持有的音频文件格式还原，请尊重音乐版权。</p>
+</footer>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script type="module" src="./src/main.js"></script>
+</body>
+</html>
